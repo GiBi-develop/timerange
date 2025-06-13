@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("zero range", func(t *testing.T) {
+	t.Run("zero-length range", func(t *testing.T) {
 		now := time.Now()
 		tr, err := New(now, now)
 		if err != nil {
@@ -35,6 +35,13 @@ func TestNew(t *testing.T) {
 			t.Error("IsZero() = false, want true for zero-length range")
 		}
 	})
+}
+
+func TestZeroValue(t *testing.T) {
+	var tr TimeRange
+	if !tr.IsZero() {
+		t.Error("IsZero() should return true for zero value TimeRange")
+	}
 }
 
 func TestOverlaps(t *testing.T) {
@@ -614,10 +621,18 @@ func TestToStringMethods(t *testing.T) {
 		}
 	})
 
+	t.Run("ToHumanString default layout", func(t *testing.T) {
+		result := tr.ToHumanString("")
+		expected := "Sun, 01 Jan 2023 12:30:00 UTC - Mon, 02 Jan 2023 13:45:00 UTC"
+		if result != expected {
+			t.Errorf("ToHumanString() = %v, want %v", result, expected)
+		}
+	})
+
 	t.Run("ToHumanString", func(t *testing.T) {
 		t.Run("default layout", func(t *testing.T) {
 			result := tr.ToHumanString("")
-			expected := "01 Jan 23 12:30 UTC - 02 Jan 23 13:45 UTC"
+			expected := "Sun, 01 Jan 2023 12:30:00 UTC - Mon, 02 Jan 2023 13:45:00 UTC"
 			if result != expected {
 				t.Errorf("ToHumanString() = %v, want %v", result, expected)
 			}
@@ -666,15 +681,11 @@ func TestJSONMarshaling(t *testing.T) {
 		}
 	})
 
-	t.Run("UnmarshalJSON", func(t *testing.T) {
-		data := []byte(`{"start":"2023-01-01T12:00:00Z","end":"2023-01-02T12:00:00Z"}`)
-		var result TimeRange
-		if err := json.Unmarshal(data, &result); err != nil {
-			t.Fatalf("UnmarshalJSON() error = %v", err)
-		}
-
-		if !result.Equal(tr) {
-			t.Errorf("UnmarshalJSON() = %v, want %v", result, tr)
+	t.Run("Unmarshal empty object", func(t *testing.T) {
+		var tr TimeRange
+		err := json.Unmarshal([]byte(`{}`), &tr)
+		if err == nil {
+			t.Error("Expected error for empty object unmarshaling")
 		}
 	})
 

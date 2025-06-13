@@ -160,7 +160,7 @@ func (tr TimeRange) Gap(other TimeRange) TimeRange {
 // --- Utility Functions ---
 
 func (tr TimeRange) IsZero() bool {
-	return tr.Start.IsZero() && tr.End.IsZero()
+	return tr.Start.IsZero() && tr.End.IsZero() || tr.Start.Equal(tr.End)
 }
 
 func (tr TimeRange) Equal(other TimeRange) bool {
@@ -227,7 +227,16 @@ func (tr *TimeRange) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(tr),
 	}
-	return json.Unmarshal(data, aux)
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	if tr.Start.IsZero() && tr.End.IsZero() {
+		return errors.New("empty time range")
+	}
+
+	return nil
 }
 
 // --- Helper Functions ---
