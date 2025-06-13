@@ -346,6 +346,86 @@ func TestGap(t *testing.T) {
 	}
 }
 
+func TestMergeOverlapping(t *testing.T) {
+	t.Run("empty input", func(t *testing.T) {
+		result, err := MergeOverlapping([]TimeRange{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(result) != 0 {
+			t.Errorf("Expected empty result, got %v", result)
+		}
+	})
+
+	t.Run("non-overlapping", func(t *testing.T) {
+		input := []TimeRange{
+			{Start: parseTime("2023-01-01"), End: parseTime("2023-01-02")},
+			{Start: parseTime("2023-01-03"), End: parseTime("2023-01-04")},
+		}
+		result, err := MergeOverlapping(input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(result) != 2 {
+			t.Errorf("Expected 2 ranges, got %d", len(result))
+		}
+	})
+
+	t.Run("overlapping", func(t *testing.T) {
+		input := []TimeRange{
+			{Start: parseTime("2023-01-01"), End: parseTime("2023-01-03")},
+			{Start: parseTime("2023-01-02"), End: parseTime("2023-01-04")},
+		}
+		expected := TimeRange{
+			Start: parseTime("2023-01-01"),
+			End:   parseTime("2023-01-04"),
+		}
+		result, err := MergeOverlapping(input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(result) != 1 || !result[0].Equal(expected) {
+			t.Errorf("Expected %v, got %v", expected, result)
+		}
+	})
+}
+
+func TestFindGaps(t *testing.T) {
+	bounds := TimeRange{
+		Start: parseTime("2023-01-01"),
+		End:   parseTime("2023-01-10"),
+	}
+
+	t.Run("no occupied", func(t *testing.T) {
+		gaps, err := FindGaps([]TimeRange{}, bounds)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(gaps) != 1 || !gaps[0].Equal(bounds) {
+			t.Errorf("Expected full bounds as gap, got %v", gaps)
+		}
+	})
+
+	t.Run("with gaps", func(t *testing.T) {
+		occupied := []TimeRange{
+			{Start: parseTime("2023-01-02"), End: parseTime("2023-01-03")},
+			{Start: parseTime("2023-01-05"), End: parseTime("2023-01-07")},
+		}
+		expected := []TimeRange{
+			{Start: parseTime("2023-01-01"), End: parseTime("2023-01-02")},
+			{Start: parseTime("2023-01-03"), End: parseTime("2023-01-05")},
+			{Start: parseTime("2023-01-07"), End: parseTime("2023-01-10")},
+		}
+		gaps, err := FindGaps(occupied, bounds)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !compareRanges(gaps, expected) {
+			t.Errorf("Expected %v, got %v", expected, gaps)
+		}
+	})
+}
+
 func TestIsAdjacent(t *testing.T) {
 	tr := TimeRange{
 		Start: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -717,4 +797,21 @@ func TestJSONMarshaling(t *testing.T) {
 			})
 		}
 	})
+}
+
+func parseTime(s string) time.Time {
+	t, _ := time.Parse("2006-01-02", s)
+	return t
+}
+
+func compareRanges(a, b []TimeRange) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !a[i].Equal(b[i]) {
+			return false
+		}
+	}
+	return true
 }

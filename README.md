@@ -86,6 +86,9 @@ json.Unmarshal(jsonData, &restored)
 | `Intersection(ranges []TimeRange)` | Находит пересечение | `common, _ := timerange.Intersection(ranges)` |
 | `Subtract(other TimeRange)` | Вычитает интервал | `remaining := tr.Subtract(other)` |
 | `Gap(other TimeRange)` | Находит промежуток между интервалами | `gap := tr1.Gap(tr2)` |
+| `MergeOverlapping(ranges []TimeRange)` | Объединяет пересекающиеся интервалы | `merged, _ := timerange.MergeOverlapping(ranges)` |
+| `FindGaps(occupied []TimeRange, bounds TimeRange)` | Находит свободные промежутки | `gaps, _ := timerange.FindGaps(busy, dayBounds)` |
+
 
 ### **Форматирование**
 | Метод | Описание | Пример |
@@ -130,6 +133,15 @@ event := Event{
 jsonData, _ := json.Marshal(event)
 ```
 
+### Объединение пересекающихся периодов
+```go
+ranges := []timerange.TimeRange{
+    {Start: parse("2023-01-01"), End: parse("2023-01-03")},
+    {Start: parse("2023-01-02"), End: parse("2023-01-04")},
+}
+merged, _ := timerange.MergeOverlapping(ranges)
+// Результат: [{2023-01-01 00:00:00 +0000 UTC 2023-01-04 00:00:00 +0000 UTC}]
+```
 ---
 
 ## **Лицензия**

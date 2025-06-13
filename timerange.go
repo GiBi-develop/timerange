@@ -157,6 +157,66 @@ func (tr TimeRange) Gap(other TimeRange) TimeRange {
 	return TimeRange{Start: other.End, End: tr.Start}
 }
 
+func MergeOverlapping(ranges []TimeRange) ([]TimeRange, error) {
+	if len(ranges) == 0 {
+		return nil, nil
+	}
+
+	// Сортируем по времени начала
+	sorted := make([]TimeRange, len(ranges))
+	copy(sorted, ranges)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Start.Before(sorted[j].Start)
+	})
+
+	merged := []TimeRange{sorted[0]}
+	for _, current := range sorted[1:] {
+		last := &merged[len(merged)-1]
+
+		if current.Start.Before(last.End) || current.Start.Equal(last.End) {
+			// Пересекаются или смежны - расширяем последний интервал
+			if current.End.After(last.End) {
+				last.End = current.End
+			}
+		} else {
+			merged = append(merged, current)
+		}
+	}
+
+	return merged, nil
+}
+
+func FindGaps(occupied []TimeRange, bounds TimeRange) ([]TimeRange, error) {
+	merged, err := MergeOverlapping(occupied)
+	if err != nil {
+		return nil, err
+	}
+
+	var gaps []TimeRange
+	previousEnd := bounds.Start
+
+	for _, tr := range merged {
+		if tr.Start.After(previousEnd) {
+			gaps = append(gaps, TimeRange{
+				Start: previousEnd,
+				End:   tr.Start,
+			})
+		}
+		if tr.End.After(previousEnd) {
+			previousEnd = tr.End
+		}
+	}
+
+	if previousEnd.Before(bounds.End) {
+		gaps = append(gaps, TimeRange{
+			Start: previousEnd,
+			End:   bounds.End,
+		})
+	}
+
+	return gaps, nil
+}
+
 // --- Utility Functions ---
 
 func (tr TimeRange) IsZero() bool {
