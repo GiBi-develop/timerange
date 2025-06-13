@@ -1,3 +1,3 @@
-module github.com/GiBi-develop/timerange
+module github.com/GiBi-develop/timerange/v1
 
-go 1.23.2
+go 1.21
