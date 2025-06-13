@@ -1,13 +1,12 @@
 # **TimeRange**
 **Go-библиотека для работы с временными интервалами**  
 [![Go Reference](https://pkg.go.dev/badge/github.com/GiBi-develop/timerange.svg)](https://pkg.go.dev/github.com/GiBi-develop/timerange)  
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Мощные операции для работы с временными промежутками:
-- ✔️ Объединение, пересечение и вычитание интервалов
-- ✔️ Поиск "окон" и смежных периодов
-- ✔️ Поддержка JSON и различных форматов вывода
-- ✔️ Полная совместимость с `time.Time`
+- Объединение, пересечение и вычитание интервалов
+- Поиск "окон" и смежных периодов
+- Поддержка JSON и различных форматов вывода
+- Полная совместимость с `time.Time`
 
 ---
 
