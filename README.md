@@ -1,10 +1,13 @@
 # **TimeRange**
 **Go-библиотека для работы с временными интервалами**  
+[![Go Reference](https://pkg.go.dev/badge/github.com/GiBi-develop/timerange.svg)](https://pkg.go.dev/github.com/GiBi-develop/timerange)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Удобные операции для работы с промежутками времени:
-- Проверка пересечений, объединение, поиск "окон".
-- Форматирование в ISO 8601.
-- Совместимо с `time.Time`.
+Мощные операции для работы с временными промежутками:
+- ✔️ Объединение, пересечение и вычитание интервалов
+- ✔️ Поиск "окон" и смежных периодов
+- ✔️ Поддержка JSON и различных форматов вывода
+- ✔️ Полная совместимость с `time.Time`
 
 ---
 
@@ -17,58 +20,117 @@ go get github.com/GiBi-develop/timerange@latest
 
 ## **Примеры использования**
 
-### **1. Создание интервала**
+### **1. Создание и базовые операции**
 ```go
-start := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
-end := start.Add(24 * time.Hour)
-tr, err := timerange.New(start, end) // ошибка, если end < start
-```
+// Создание интервала
+tr, _ := timerange.New(
+    time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+    time.Date(2023, 1, 2, 0, 0, 0, 0, time.UTC),
+)
 
-### **2. Проверка пересечения интервалов**
-```go
+// Проверка пересечения
 other := timerange.TimeRange{
-    Start: start.Add(12 * time.Hour),
-    End:   end.Add(12 * time.Hour),
+    Start: time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
+    End:   time.Date(2023, 1, 3, 0, 0, 0, 0, time.UTC),
 }
 fmt.Println(tr.Overlaps(other)) // true
 ```
 
-### **3. Объединение интервалов**
+### **2. Работа с множеством интервалов**
 ```go
-merged, err := tr.Merge(other) // ошибка, если интервалы не пересекаются и не смежны
-fmt.Println(merged.Duration()) // 36h0m0s
+// Объединение пересекающихся интервалов
+ranges := []timerange.TimeRange{tr1, tr2, tr3}
+merged, _ := timerange.Union(ranges)
+
+// Поиск общего времени
+common, _ := timerange.Intersection(ranges)
+
+// Вычитание интервалов
+available := busyRange.Subtract(meetingRange)
 ```
 
-### **4. Поиск промежутка между интервалами**
+### **3. Форматирование и сериализация**
 ```go
-tr2, _ := timerange.New(
-    time.Date(2023, 1, 3, 0, 0, 0, 0, time.UTC),
-    time.Date(2023, 1, 4, 0, 0, 0, 0, time.UTC),
-)
-gap := tr.Gap(tr2) // промежуток между tr и tr2
-fmt.Println(gap.ToISOString()) // "2023-01-02T00:00:00Z/2023-01-03T00:00:00Z"
-```
+// Человекочитаемый формат
+fmt.Println(tr.ToHumanString("2006-01-02")) // "2023-01-01 - 2023-01-02"
 
-### **5. Разделение интервала на части**
-```go
-parts := tr.SplitByDuration(6 * time.Hour) // []TimeRange
-for _, part := range parts {
-    fmt.Println(part.Start, "-", part.End)
-}
+// JSON
+jsonData, _ := json.Marshal(tr)
+var restored timerange.TimeRange
+json.Unmarshal(jsonData, &restored)
 ```
 
 ---
 
-## **Полный список методов**
+## **Полный справочник методов**
 
+### **Создание и валидация**
 | Метод | Описание | Пример |
 |-------|----------|--------|
-| `New(start, end time.Time)` | Создает интервал (проверяет валидность) | `tr, err := timerange.New(t1, t2)` |
-| `Overlaps(other TimeRange)` | Проверяет пересечение интервалов | `tr.Overlaps(other)` |
-| `Contains(t time.Time)` | Проверяет, содержит ли время | `tr.Contains(now)` |
-| `Duration()` | Возвращает длительность | `tr.Duration()` |
-| `SplitByDuration(d time.Duration)` | Делит интервал на части | `tr.SplitByDuration(time.Hour)` |
-| `Merge(other TimeRange)` | Объединяет пересекающиеся интервалы | `merged, err := tr.Merge(other)` |
-| `Gap(other TimeRange)` | Возвращает промежуток между интервалами | `gap := tr.Gap(other)` |
-| `IsAdjacent(other TimeRange)` | Проверяет, смежны ли интервалы | `tr.IsAdjacent(other)` |
-| `ToISOString()` | Форматирует в ISO 8601 | `tr.ToISOString()` |
+| `New(start, end time.Time)` | Создает новый интервал | `tr, err := timerange.New(start, end)` |
+| `FromDuration(start time.Time, d time.Duration)` | Создает из начальной точки и длительности | `tr := timerange.FromDuration(now, 2*time.Hour)` |
+
+### **Основные операции**
+| Метод | Описание | Пример |
+|-------|----------|--------|
+| `Overlaps(other TimeRange)` | Проверяет пересечение | `if tr1.Overlaps(tr2)` |
+| `Contains(t time.Time)` | Проверяет вхождение времени | `if tr.Contains(now)` |
+| `Duration()` | Возвращает длительность | `dur := tr.Duration()` |
+| `IsZero()` | Проверяет нулевой интервал | `if tr.IsZero()` |
+| `Equal(other TimeRange)` | Сравнивает интервалы | `if tr1.Equal(tr2)` |
+
+### **Операции с множествами**
+| Метод | Описание | Пример |
+|-------|----------|--------|
+| `Union(ranges []TimeRange)` | Объединяет интервалы | `merged, _ := timerange.Union(ranges)` |
+| `Intersection(ranges []TimeRange)` | Находит пересечение | `common, _ := timerange.Intersection(ranges)` |
+| `Subtract(other TimeRange)` | Вычитает интервал | `remaining := tr.Subtract(other)` |
+| `Gap(other TimeRange)` | Находит промежуток между интервалами | `gap := tr1.Gap(tr2)` |
+
+### **Форматирование**
+| Метод | Описание | Пример |
+|-------|----------|--------|
+| `ToISOString()` | Формат ISO 8601 | `str := tr.ToISOString()` |
+| `ToHumanString(layout)` | Читаемый формат | `str := tr.ToHumanString("Jan 2, 2006")` |
+| `ToSlugString()` | Для URL и идентификаторов | `slug := tr.ToSlugString()` |
+
+### **Утилиты**
+| Метод | Описание | Пример |
+|-------|----------|--------|
+| `SplitByDuration(d)` | Делит на подынтервалы | `parts := tr.SplitByDuration(time.Hour)` |
+| `Clamp(t time.Time)` | Ограничивает время интервалом | `safeTime := tr.Clamp(userTime)` |
+| `IsAdjacent(other)` | Проверяет смежность | `if tr1.IsAdjacent(tr2)` |
+
+---
+
+## **Дополнительные примеры**
+
+### **Поиск свободных окон**
+```go
+workDay, _ := timerange.New(
+    time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC),
+    time.Date(2023, 1, 1, 18, 0, 0, 0, time.UTC),
+)
+
+meetings := []timerange.TimeRange{meeting1, meeting2}
+freeSlots := workDay.Subtract(timerange.Union(meetings))
+```
+
+### **Сериализация в JSON**
+```go
+type Event struct {
+    Name      string          `json:"name"`
+    TimeRange timerange.TimeRange `json:"time_range"`
+}
+
+event := Event{
+    Name: "Meeting",
+    TimeRange: tr,
+}
+jsonData, _ := json.Marshal(event)
+```
+
+---
+
+## **Лицензия**
+MIT License. Полный текст доступен в файле [LICENSE](LICENSE).
